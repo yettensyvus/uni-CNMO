@@ -1,16 +1,234 @@
-# This is a sample Python script.
+import tkinter as tk
+from tkinter import ttk
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
+import time
+import math
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+class FunctionSelectionApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Metode numerice de calcul al rădăcinilor ecuațiilor neliniare")
+        self.center_window(900, 600)
 
+        # Main frame
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(expand=True, pady=10)
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+        # UI Elements
+        self.create_title_label()
+        self.create_function_selection()
+        self.create_interval_selection()
+        self.create_method_selection()
+        self.create_execute_button()
+        self.create_graph_and_table()
 
+    def center_window(self, width, height):
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x_offset = (screen_width - width) // 2
+        y_offset = (screen_height - height) // 2
+        self.root.geometry(f"{width}x{height}+{x_offset}+{y_offset}")
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+    def create_title_label(self):
+        label = tk.Label(self.main_frame, text="Metode numerice de calcul al rădăcinilor ecuațiilor neliniare",
+                         font=("Arial", 16), anchor="center")
+        label.pack(pady=10)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    def create_function_selection(self):
+        frame = tk.Frame(self.main_frame, relief=tk.GROOVE, borderwidth=2)
+        frame.pack(pady=5, fill="x", expand=True)
+
+        tk.Label(frame, text="Precizarea membrului stâng al ecuației", font=("Arial", 12)).pack(pady=5)
+
+        radio_frame = tk.Frame(frame)
+        radio_frame.pack(pady=5)
+
+        self.selected_option = tk.StringVar(value="interactiv")
+
+        tk.Radiobutton(radio_frame, text="din colecție", variable=self.selected_option, value="din_colectie").pack(
+            side=tk.LEFT, padx=20)
+        tk.Radiobutton(radio_frame, text="interactiv", variable=self.selected_option, value="interactiv").pack(
+            side=tk.RIGHT, padx=20)
+
+        input_frame = tk.Frame(frame)
+        input_frame.pack(pady=5)
+
+        tk.Label(input_frame, text="f(x) =").grid(row=0, column=0, padx=5)
+
+        self.function_options = ["Selectați funcția", "2*np.sin(3*x) - np.log(x**3 - 1) + 4",
+                                 "np.sin(np.pi*x/6) - np.cos(x-1)",
+                                 "np.exp(x - x**3) + 8*np.cos(4*x)",
+                                 "x**6 - 5.5*x**5 + 6.18*x**4 + 18.54*x**3 - 56.9592*x**2 + 55.9872*x - 19.3156",
+                                 "x**6 - 0.7*x**5 - 8.7*x**4 + 5.58*x**3 + 22.356*x**2 - 8.39808*x - 19.3156",
+                                 "x**6 - 2.4*x**5 - 18.27*x**4 + 23.216*x**3 + 115.7*x**2 - 19.5804*x - 164.818"]
+        self.dropdown = ttk.Combobox(input_frame, values=self.function_options, state="readonly")
+        self.dropdown.current(0)
+        self.dropdown.grid(row=0, column=1, padx=5)
+
+        tk.Label(input_frame, text="f(x) =").grid(row=0, column=2, padx=5)
+        self.entry_fx = tk.Entry(input_frame, width=20)
+        self.entry_fx.insert(0, "x*np.cos(x)-np.sin(x)")
+        self.entry_fx.grid(row=0, column=3, padx=5)
+
+    def create_interval_selection(self):
+        frame = tk.Frame(self.main_frame, relief=tk.GROOVE, borderwidth=2)
+        frame.pack(pady=5, fill="x", expand=True)
+
+        tk.Label(frame, text="Intervalul de căutare a zerourilor", font=("Arial", 12)).pack(pady=5)
+
+        input_frame = tk.Frame(frame)
+        input_frame.pack(pady=5)
+
+        tk.Label(input_frame, text="a=").grid(row=0, column=0, padx=5)
+        self.entry_a = tk.Entry(input_frame, width=10)
+        self.entry_a.insert(0, "-9")
+        self.entry_a.grid(row=0, column=1, padx=5)
+
+        tk.Label(input_frame, text="b=").grid(row=0, column=2, padx=5)
+        self.entry_b = tk.Entry(input_frame, width=10)
+        self.entry_b.insert(0, "8")
+        self.entry_b.grid(row=0, column=3, padx=5)
+
+    def create_method_selection(self):
+        frame = tk.Frame(self.main_frame, relief=tk.GROOVE, borderwidth=2)
+        frame.pack(pady=5, fill="x", expand=True)
+
+        tk.Label(frame, text="Precizarea metodei de calcul", font=("Arial", 12)).pack(pady=5)
+
+        input_frame = tk.Frame(frame)
+        input_frame.pack(pady=5)
+
+        self.method_options = ["Selectați metoda", "Bisection", "Newton-Raphson", "Secant"]
+        self.method_dropdown = ttk.Combobox(input_frame, values=self.method_options, state="readonly")
+        self.method_dropdown.current(0)
+        self.method_dropdown.grid(row=0, column=0, padx=5)
+
+        tk.Label(input_frame, text="eps=1e-").grid(row=0, column=1, padx=5)
+        self.epsilon_spinbox = tk.Spinbox(input_frame, from_=1, to=10, width=5)
+        self.epsilon_spinbox.insert(0, "6")
+        self.epsilon_spinbox.grid(row=0, column=2, padx=5)
+
+    def create_execute_button(self):
+        execute_button = tk.Button(self.main_frame, text="Execută!", font=("Arial", 12), command=self.plot_function)
+        execute_button.pack(pady=10)
+
+    def create_graph_and_table(self):
+        frame = tk.Frame(self.main_frame)
+        frame.pack(pady=10, fill="both", expand=True)
+
+        graph_frame = tk.Frame(frame)
+        graph_frame.pack(side=tk.LEFT, padx=10, pady=5, fill="both", expand=True)
+
+        self.figure, self.ax = plt.subplots(figsize=(6.25, 3))
+        self.canvas = FigureCanvasTkAgg(self.figure, master=graph_frame)
+        self.canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        table_frame = tk.Frame(frame)
+        table_frame.pack(side=tk.RIGHT, padx=10, pady=5, fill="both", expand=True)
+
+        self.tree = ttk.Treeview(table_frame, columns=("x", "f(x)", "Iterations", "Time"), show="headings")
+        self.tree.heading("x", text="Rădăcina x")
+        self.tree.heading("f(x)", text="f(x)")
+        self.tree.heading("Iterations", text="Număr iterații k")
+        self.tree.heading("Time", text="Timp de calcul")
+        self.tree.pack(fill="both", expand=True)
+
+    def bisection_method(self, func, a, b, epsilon):
+        max_iter = 100
+        iterations = 0
+        while (b - a) / 2 > epsilon and iterations < max_iter:
+            c = (a + b) / 2
+            if func(c) == 0:
+                return c, func(c), iterations
+            elif func(a) * func(c) < 0:
+                b = c
+            else:
+                a = c
+            iterations += 1
+        return c, func(c), iterations
+
+    def newton_raphson_method(self, func, func_derivative, x0, epsilon):
+        max_iter = 100
+        iterations = 0
+        x = x0
+        while abs(func(x)) > epsilon and iterations < max_iter:
+            x = x - func(x) / func_derivative(x)
+            iterations += 1
+        return x, func(x), iterations
+
+    def secant_method(self, func, a, b, epsilon):
+        max_iter = 100
+        iterations = 0
+        while abs(b - a) > epsilon and iterations < max_iter:
+            c = b - func(b) * (b - a) / (func(b) - func(a))
+            a, b = b, c
+            iterations += 1
+        return b, func(b), iterations
+
+    def find_zeros(self, func, a, b, epsilon):
+        zeros = []
+        x_vals = np.linspace(a, b, 100)
+        y_vals = func(x_vals)
+
+        # Find intervals where the function changes sign
+        for i in range(len(x_vals) - 1):
+            if y_vals[i] * y_vals[i + 1] < 0:
+                if self.method_dropdown.get() == "Bisection":
+                    root, fx_value, iterations = self.bisection_method(func, x_vals[i], x_vals[i + 1], epsilon)
+                elif self.method_dropdown.get() == "Newton-Raphson":
+                    func_derivative = lambda x: (func(x + epsilon) - func(x)) / epsilon
+                    root, fx_value, iterations = self.newton_raphson_method(func, func_derivative, (x_vals[i] + x_vals[i + 1]) / 2, epsilon)
+                elif self.method_dropdown.get() == "Secant":
+                    root, fx_value, iterations = self.secant_method(func, x_vals[i], x_vals[i + 1], epsilon)
+                zeros.append((root, fx_value, iterations))
+        return zeros
+
+    def plot_function(self):
+        try:
+            func_expr = self.entry_fx.get()
+            func = lambda x: eval(func_expr, {"x": x, "np": np, "math": math})
+
+            a = float(self.entry_a.get())
+            b = float(self.entry_b.get())
+            epsilon = 10 ** -int(self.epsilon_spinbox.get())
+
+            self.tree.delete(*self.tree.get_children())
+
+            zeros = self.find_zeros(func, a, b, epsilon)
+
+            x_vals = np.linspace(a, b, 400)
+            y_vals = func(x_vals)
+
+            # Check for NaN values and handle them
+            if np.any(np.isnan(y_vals)):
+                raise ValueError("Function evaluation resulted in NaN values. Please check the function and the interval.")
+
+            self.ax.clear()
+            self.ax.plot(x_vals, y_vals, label=func_expr)
+
+            for root, fx_value, _ in zeros:
+                self.ax.scatter(root, fx_value, color="red", zorder=3)
+
+            self.ax.axhline(0, color="black", linewidth=0.5)
+            self.ax.legend()
+            self.canvas.draw()
+
+            for root, fx_value, iterations in zeros:
+                start_time = time.time()
+                self.tree.insert("", "end", values=(
+                    round(root, 4), round(fx_value, 4), iterations, round(time.time() - start_time, 6)))
+
+            self.tree.column("x", width=100, anchor="center")
+            self.tree.column("f(x)", width=100, anchor="center")
+            self.tree.column("Iterations", width=100, anchor="center")
+            self.tree.column("Time", width=100, anchor="center")
+
+        except Exception as e:
+            print("Error in function evaluation:", e)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = FunctionSelectionApp(root)
+    root.mainloop()

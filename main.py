@@ -6,6 +6,7 @@ import numpy as np
 import time
 import math
 
+
 class FunctionSelectionApp:
     def __init__(self, root):
         self.root = root
@@ -100,7 +101,7 @@ class FunctionSelectionApp:
         input_frame = tk.Frame(frame)
         input_frame.pack(pady=5)
 
-        self.method_options = ["Selectați metoda", "Bisection", "Secant", "Newton"]
+        self.method_options = ["Selectați metoda", "Bisection", "Secant", "Newton", "Picard"]
         self.method_dropdown = ttk.Combobox(input_frame, values=self.method_options, state="readonly")
         self.method_dropdown.current(0)
         self.method_dropdown.grid(row=0, column=0, padx=5)
@@ -298,6 +299,35 @@ class FunctionSelectionApp:
             print("Error in Newton's method:", e)
             return None, None, None
 
+    def picard_method(self, func, a, b, epsilon):
+        # Define the contraction mapping Fi(x)
+        Fi = lambda x: func(x)  # You may need to modify this based on your specific function
+
+        # Step 1: Choose an initial guess x0
+        x0 = (a + b) / 2  # Midpoint as initial guess
+        x1 = Fi(x0)  # First iteration
+
+        # Step 2: Check for conditions
+        q = max(abs(Fi(x)) for x in np.linspace(a, b, 100))  # Calculate the maximum |Fi'(x)|
+
+        if not (0 < q < 1):
+            raise ValueError("The function is not a contraction mapping.")
+
+        # Calculate maximum number of iterations
+        Nmax = int(np.log(abs(x1 - x0) / epsilon) / np.log(1 / q))
+        iterations = 0
+
+        while iterations < Nmax:
+            x0, x1 = x1, Fi(x1)  # Update x0 and compute the next approximation
+
+            # Check stopping criteria
+            if abs(x1 - x0) < epsilon:
+                return x1, func(x1), iterations  # Return the root and function value
+
+            iterations += 1
+
+        return x1, func(x1), iterations  # Return the last computed value if Nmax reached
+
     def find_zeros(self, func, a, b, epsilon):
         zeros = []
         x_vals = np.linspace(a, b, 100)
@@ -315,7 +345,13 @@ class FunctionSelectionApp:
                                                                    x_exact)  # Include x_exact
                 elif self.method_dropdown.get() == "Newton":
                     root, fx_value, iterations = self.newton_method(func, x_vals[i], x_vals[i + 1], epsilon, x_exact)
-                zeros.append((root, fx_value, iterations))
+                elif self.method_dropdown.get() == "Picard":
+                    root, fx_value, iterations = self.picard_method(func, x_vals[i], x_vals[i + 1], epsilon)
+                else:
+                    continue  # Skip if no valid method is selected
+
+                if root is not None:  # Check if root is valid
+                    zeros.append((root, fx_value, iterations))
         return zeros
 
     def plot_function(self):

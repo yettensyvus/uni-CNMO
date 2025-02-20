@@ -57,12 +57,12 @@ class FunctionSelectionApp:
 
         tk.Label(input_frame, text="f(x) =").grid(row=0, column=0, padx=5)
 
-        self.function_options = ["Selectați funcția", "2*np.sin(3*x) - np.log(x**3 - 1) + 4",
-                                 "np.sin(np.pi*x/6) - np.cos(x-1)",
-                                 "np.exp(x - x**3) + 8*np.cos(4*x)",
-                                 "x**6 - 5.5*x**5 + 6.18*x**4 + 18.54*x**3 - 56.9592*x**2 + 55.9872*x - 19.3156",
-                                 "x**6 - 0.7*x**5 - 8.7*x**4 + 5.58*x**3 + 22.356*x**2 - 8.39808*x - 19.3156",
-                                 "x**6 - 2.4*x**5 - 18.27*x**4 + 23.216*x**3 + 115.7*x**2 - 19.5804*x - 164.818"]
+        # New function collection
+        self.function_options = [
+            "2*np.sin(3*x) - np.log(x**2 - 1) + 4",
+            "np.sin(np.pi*x/6) - np.cos(x-1)",
+            "np.exp(-x**2) + 8*np.cos(4*x)"
+        ]
         self.dropdown = ttk.Combobox(input_frame, values=self.function_options, state="readonly")
         self.dropdown.current(0)
         self.dropdown.grid(row=0, column=1, padx=5)
@@ -100,7 +100,7 @@ class FunctionSelectionApp:
         input_frame = tk.Frame(frame)
         input_frame.pack(pady=5)
 
-        self.method_options = ["Selectați metoda", "Bisection", "Newton-Raphson", "Secant"]
+        self.method_options = ["Selectați metoda", "Bisection", "Secant"]
         self.method_dropdown = ttk.Combobox(input_frame, values=self.method_options, state="readonly")
         self.method_dropdown.current(0)
         self.method_dropdown.grid(row=0, column=0, padx=5)
@@ -136,36 +136,113 @@ class FunctionSelectionApp:
         self.tree.pack(fill="both", expand=True)
 
     def bisection_method(self, func, a, b, epsilon):
-        max_iter = 100
+        # Step 1: Check if f(a) and f(b) are defined
+        fa = func(a)
+        fb = func(b)
+
+        if np.isnan(fa) or np.isnan(fb):
+            raise ValueError("Function is not defined at the endpoints a or b.")
+
+        # Step 2: Check for continuity and sign change
+        if not self.check_continuity(func, a, b):
+            raise ValueError("Function is not continuous on the interval.")
+        if fa * fb >= 0:
+            raise ValueError("Function values at the endpoints must have opposite signs.")
+
+        # Calculate maximum number of iterations
+        Nmax = int(np.ceil(np.log2((b - a) / epsilon)))
         iterations = 0
-        while (b - a) / 2 > epsilon and iterations < max_iter:
+
+        while iterations < Nmax:
+            # Step 3: Calculate the midpoint
             c = (a + b) / 2
-            if func(c) == 0:
-                return c, func(c), iterations
-            elif func(a) * func(c) < 0:
-                b = c
+            fc = func(c)
+
+            # Calculate delta
+            delta = abs(fc)
+
+            # Check the stopping criteria
+            if abs(b - a) < epsilon or delta < epsilon:
+                return c, fc, iterations  # Return the midpoint as the approximate root
+
+            # Step 4: Check the value of the function at c
+            if fc == 0:
+                return c, fc, iterations  # Found exact root
+            elif fc * fb < 0:
+                a = c  # Root is in [c, b]
+                fa = fc  # Update fa
             else:
-                a = c
-            iterations += 1
-        return c, func(c), iterations
+                b = c  # Root is in [a, c]
+                fb = fc  # Update fb
 
-    def newton_raphson_method(self, func, func_derivative, x0, epsilon):
-        max_iter = 100
-        iterations = 0
-        x = x0
-        while abs(func(x)) > epsilon and iterations < max_iter:
-            x = x - func(x) / func_derivative(x)
             iterations += 1
-        return x, func(x), iterations
 
-    def secant_method(self, func, a, b, epsilon):
-        max_iter = 100
+        # Return the midpoint as the approximate root
+        return (a + b) / 2, func((a + b) / 2), iterations
+
+    def check_continuity(self, func, a, b, num_points=100):
+        x_vals = np.linspace(a, b, num_points)
+        try:
+            func(x_vals)
+            return True
+        except Exception:
+            return False
+
+    def check_uniqueness(self, func, a, b):
+        # Check if the derivative maintains a consistent sign
+        derivative = np.gradient([func(x) for x in np.linspace(a, b, 100)])
+        return np.all(derivative > 0) or np.all(derivative < 0)
+
+    def find_x_exact(self, func, a, b):
+        x_vals = np.linspace(a, b, 400)
+        y_vals = np.abs(func(x_vals))
+        x_exact = x_vals[np.argmin(y_vals)]  # Punctul unde f(x) este cel mai aproape de 0
+        return x_exact
+
+    def chord_method(self, func, a, b, epsilon, delta, x_exact, max_iterations=None):
+        # Verificăm dacă funcția este definită la capete
+        fa, fb = func(a), func(b)
+        if np.isnan(fa) or np.isnan(fb):
+            raise ValueError("Funcția nu este definită la capetele intervalului.")
+
+        # Verificăm continuitatea și schimbarea de semn
+        if fa * fb >= 0:
+            raise ValueError("Funcția trebuie să aibă valori de semne opuse la capetele intervalului.")
+
+        # Calculăm q conform formulei
+        try:
+            q = abs((func(b) * (func(x_exact + epsilon) - 2 * func(x_exact) + func(x_exact - epsilon))) /
+                    (x_exact ** 2 * (func(x_exact)) ** 2))
+        except ZeroDivisionError:
+            raise ValueError("Eroare la calculul lui q: împărțire la zero.")
+
+        # Calculăm numărul maxim de iterații dacă nu este specificat
+        if max_iterations is None:
+            max_iterations = int(np.log(abs(a - x_exact) / epsilon) / np.log(1 / q))
+
         iterations = 0
-        while abs(b - a) > epsilon and iterations < max_iter:
-            c = b - func(b) * (b - a) / (func(b) - func(a))
-            a, b = b, c
+        while abs(b - a) >= epsilon:
+            # Calculăm punctul de intersecție a coardei
+            xn = (a * fb - b * fa) / (fb - fa)
+            fxn = func(xn)
+
+            # Verificăm criteriile de oprire
+            if abs(fxn) < delta or abs(b - a) < epsilon:
+                return xn, fxn, iterations
+
+            # Alegem noul interval
+            if fxn * fb < 0:
+                a, fa = xn, fxn
+            else:
+                b, fb = xn, fxn
+
             iterations += 1
-        return b, func(b), iterations
+
+            # Verificăm numărul maxim de iterații
+            if iterations >= max_iterations:
+                raise ValueError("Numărul maxim de iterații a fost atins fără convergență.")
+
+        return xn, fxn, iterations
 
     def find_zeros(self, func, a, b, epsilon):
         zeros = []
@@ -177,17 +254,20 @@ class FunctionSelectionApp:
             if y_vals[i] * y_vals[i + 1] < 0:
                 if self.method_dropdown.get() == "Bisection":
                     root, fx_value, iterations = self.bisection_method(func, x_vals[i], x_vals[i + 1], epsilon)
-                elif self.method_dropdown.get() == "Newton-Raphson":
-                    func_derivative = lambda x: (func(x + epsilon) - func(x)) / epsilon
-                    root, fx_value, iterations = self.newton_raphson_method(func, func_derivative, (x_vals[i] + x_vals[i + 1]) / 2, epsilon)
                 elif self.method_dropdown.get() == "Secant":
-                    root, fx_value, iterations = self.secant_method(func, x_vals[i], x_vals[i + 1], epsilon)
+                    root, fx_value, iterations = self.chord_method(func, x_vals[i], x_vals[i + 1], epsilon,
+                                                                   (x_vals[i] + x_vals[i + 1]) / 2)
                 zeros.append((root, fx_value, iterations))
         return zeros
 
     def plot_function(self):
         try:
-            func_expr = self.entry_fx.get()
+            # Determine the function based on the selected option
+            if self.selected_option.get() == "din_colectie":
+                func_expr = self.dropdown.get()
+            else:
+                func_expr = self.entry_fx.get()
+
             func = lambda x: eval(func_expr, {"x": x, "np": np, "math": math})
 
             a = float(self.entry_a.get())

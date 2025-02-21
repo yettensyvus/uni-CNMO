@@ -212,8 +212,8 @@ class FunctionSelectionApp:
 
             # Calculate the maximum root from the found zeros
             if zeros:
-                max_root = max(zeros, key=lambda item: abs(item[0]))[0]  # Get the root with maximum absolute value
-                self.ax.scatter(max_root, func(max_root), color="green", zorder=4, label=f'Max Root: {max_root:.4f}')
+                min_root = min(zeros, key=lambda item: abs(item[0]))[0]  # Get the root with min absolute value
+                self.ax.scatter(min_root, func(min_root), color="green", zorder=4, label=f'Min Root: {min_root:.4f}')
 
             self.ax.axhline(0, color="black", linewidth=0.5)
 

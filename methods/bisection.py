@@ -1,7 +1,7 @@
 import numpy as np
 from utils import check_continuity, check_uniqueness
 
-def bisection_method(func, a, b, epsilon):
+def bisection_method(func, a, b, epsilon, x_exact):
     # Step 1: Check if f(a) and f(b) are defined
     fa = func(a)
     fb = func(b)
@@ -21,15 +21,18 @@ def bisection_method(func, a, b, epsilon):
 
     # Calculate maximum number of iterations
     Nmax = int(np.ceil(np.log2((b - a) / epsilon)))
-    iterations = 0
+    iterations = 1
 
     while iterations < Nmax:
+
         # Step 4: Calculate the midpoint
         m = (a + b) / 2
         fm = func(m)
 
+        delta = abs(func(x_exact))
+
         # Check the stopping criteria
-        if abs(b - a) < epsilon or abs(fm) < epsilon:
+        if abs(b - a) < epsilon or abs(fm) < delta:
             return m, fm, iterations  # Return the midpoint as the approximate root
 
         # Step 5: Check the value of the function at m

@@ -36,9 +36,10 @@ def newton_method(func, a, b, epsilon, x_exact):
         if Nmax <= 0:
             Nmax = 100  # Default maximum iterations if Nmax is invalid
 
-        iterations = 0
+        iterations = 1
 
         while iterations < Nmax:
+
             fx = func(x0)
             fpx = f_prime(x0)
 
@@ -58,6 +59,7 @@ def newton_method(func, a, b, epsilon, x_exact):
                 return x1, func(x1), iterations
 
             x0 = x1
+
             iterations += 1
 
         return x0, func(x0), iterations  # Return last computed value if Nmax reached

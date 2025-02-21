@@ -2,11 +2,10 @@ import tkinter as tk
 from tkinter import ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import numpy as np
 import time
 import math
 from methods.bisection import bisection_method
-from methods.secant import chord_method
+from methods.chord import chord_method
 from methods.newton import newton_method
 from methods.picard import picard_method
 from utils import *
@@ -91,12 +90,12 @@ class FunctionSelectionApp:
 
         tk.Label(input_frame, text="a=").grid(row=0, column=0, padx=5)
         self.entry_a = tk.Entry(input_frame, width=10)
-        self.entry_a.insert(0, "-9")
+        self.entry_a.insert(0, "-1")
         self.entry_a.grid(row=0, column=1, padx=5)
 
         tk.Label(input_frame, text="b=").grid(row=0, column=2, padx=5)
         self.entry_b = tk.Entry(input_frame, width=10)
-        self.entry_b.insert(0, "8")
+        self.entry_b.insert(0, "2")
         self.entry_b.grid(row=0, column=3, padx=5)
 
     def create_method_selection(self):
@@ -108,7 +107,7 @@ class FunctionSelectionApp:
         input_frame = tk.Frame(frame)
         input_frame.pack(pady=5)
 
-        self.method_options = ["Selectați metoda", "Bisection", "Secant", "Newton", "Picard"]
+        self.method_options = ["Selectați metoda", "Bisection", "Coardelor", "Newton", "Picard"]
         self.method_dropdown = ttk.Combobox(input_frame, values=self.method_options, state="readonly")
         self.method_dropdown.current(0)
         self.method_dropdown.grid(row=0, column=0, padx=5)
@@ -152,8 +151,8 @@ class FunctionSelectionApp:
             if y_vals[i] * y_vals[i + 1] < 0:
                 x_exact = find_x_exact(func, x_vals[i], x_vals[i + 1])  # Get the exact point
                 if self.method_dropdown.get() == "Bisection":
-                    root, fx_value, iterations = bisection_method(func, x_vals[i], x_vals[i + 1], epsilon)
-                elif self.method_dropdown.get() == "Secant":
+                    root, fx_value, iterations = bisection_method(func, x_vals[i], x_vals[i + 1], epsilon, x_exact)
+                elif self.method_dropdown.get() == "Coardelor":
                     root, fx_value, iterations = chord_method(func, x_vals[i], x_vals[i + 1], epsilon,
                                                                    (x_vals[i] + x_vals[i + 1]) / 2,
                                                                    x_exact)  # Include x_exact

@@ -18,15 +18,15 @@ def picard_method(func, a, b, epsilon):
 
     # Calculate maximum number of iterations
     Nmax = int(np.log(abs(x1 - x0) / epsilon) / np.log(1 / q))
-    iterations = 0
+    iterations = 1
 
     while iterations < Nmax:
+        iterations += 1
         x0, x1 = x1, Fi(x1)  # Update x0 and compute the next approximation
 
         # Check stopping criteria
         if abs(x1 - x0) < epsilon:
             return x1, func(x1), iterations  # Return the root and function value
 
-        iterations += 1
 
     return x1, func(x1), iterations  # Return the last computed value if Nmax reached

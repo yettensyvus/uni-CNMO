@@ -184,8 +184,19 @@ class FunctionSelectionApp:
 
             self.tree.delete(*self.tree.get_children())
 
+            # Use find_zeros to get the zeros based on the selected method
             zeros = self.find_zeros(func, a, b, epsilon)
 
+            # If no specific method is selected, find zeros using find_x_exact
+            if self.method_dropdown.get() == "Selectați metoda":
+                x_vals = np.linspace(a, b, 100)
+                y_vals = func(x_vals)
+                for i in range(len(x_vals) - 1):
+                    if y_vals[i] * y_vals[i + 1] < 0:
+                        x_exact = find_x_exact(func, x_vals[i], x_vals[i + 1])
+                        zeros.append((x_exact, func(x_exact), 0))  # 0 iterations for exact values
+
+            # Prepare to plot the function
             x_vals = np.linspace(a, b, 400)
             y_vals = func(x_vals)
 

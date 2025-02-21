@@ -11,6 +11,8 @@ def picard_method(func, a, b, epsilon):
     # Step 2: Check for conditions
     q = max(abs(Fi(x)) for x in np.linspace(a, b, 100))  # Calculate the maximum |Fi'(x)|
 
+    print(f"Computed contraction coefficient q: {q}")  # Debugging information
+
     if not (0 < q < 1):
         raise ValueError("The function is not a contraction mapping.")
 
